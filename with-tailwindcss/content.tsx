@@ -1,9 +1,15 @@
 import cssText from "data-text:~style.css"
 import type { PlasmoContentScript } from "plasmo"
-import { useReducer } from "react"
+import { useEffect, useReducer, useState } from "react"
+import { db, auth } from "./firebase"
+import { setDoc, doc } from "firebase/firestore"
+import { onAuthStateChanged, User } from "firebase/auth"
+import { useStorage } from "@plasmohq/storage"
+
 
 export const config: PlasmoContentScript = {
-  matches: ["https://www.plasmo.com/*"]
+	matches: ["<all_urls>"],
+	all_frames: true
 }
 
 export const getStyle = () => {
@@ -13,17 +19,33 @@ export const getStyle = () => {
 }
 
 const PlasmoOverlay = () => {
-  const [count, increase] = useReducer((c) => c + 1, 0)
+	const [count, increase] = useReducer((c) => c + 1, 0)
+	const [userId, setUserId] = useStorage<string>("userId");
 
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        padding: 16
-      }}>
+	useEffect(() => {
+		console.log(userId)
+	}, [])
+
+	const addDB = () => {
+
+		let usersDoc = doc(db, "users", '2')
+		try {
+			setDoc(usersDoc, {
+				count: count
+			}, { merge: true })
+		} catch (e) {
+			console.error(e)
+		}
+	}
+
+
+	return (
+		<>
+
+			<div className="flex flex-col justify-center items-center h-screen">
+
       <button
-        onClick={() => increase()}
+					onClick={() => { increase(); addDB() }}
         type="button"
         className="inline-flex items-center px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
         Count:
@@ -31,7 +53,8 @@ const PlasmoOverlay = () => {
           {count}
         </span>
       </button>
-    </div>
+			</div>
+		</>
   )
 }
 
